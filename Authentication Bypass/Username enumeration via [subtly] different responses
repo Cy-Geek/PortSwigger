@@ -3,8 +3,8 @@ import requests  # Import the requests module to send HTTP requests
 def start():
     # Define the lab ID (replace "LAB_ID-HERE" with your actual lab ID)
     labID = "LAB_ID-HERE"
-    username_list = 'USERNAME-LIST'  # <<< Replace "USERNAME-LIST" with your usernames wordlist path file
-    password_list = 'PASSWORD-LIST'  # <<< Replace "PASSWORD-LIST" with your passwords wordlist path file
+    username_list = r'USERNAME-LIST'  # <<< Replace "USERNAME-LIST" with your usernames wordlist path file
+    password_list = r'PASSWORD-LIST'  # <<< Replace "PASSWORD-LIST" with your passwords wordlist path file
     
     # Construct the login URL using the lab ID
     url = f'https://{labID}.web-security-academy.net/login'
@@ -13,12 +13,12 @@ def start():
     correct_username = ''
     
     # Open the username wordlist file and read all lines
-    with open(fr'{username_list}', 'r') as file:
+    with open(username_list, 'r') as file:
         usernames = file.readlines()  # Read all usernames from the file
         usernames = [u.strip() for u in usernames]  # Remove any leading/trailing whitespace from each username
     
     # Open the password wordlist file and read all lines
-    with open(fr'{password_list}', 'r') as file2:
+    with open(password_list, 'r') as file2:
         passwords = file2.readlines()  # Read all passwords from the file
         passwords = [p.strip() for p in passwords]  # Remove any leading/trailing whitespace from each password
     
